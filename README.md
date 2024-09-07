@@ -3,3 +3,4 @@ QuantifySPY is a Python tool for financial analysis. Fetch historical SPY data, 
 
 
 Simply run gui.py to start.
+![QuantiSPY](https://github.com/user-attachments/assets/b88a874a-6c15-40b4-94f1-96e8750d271b)
