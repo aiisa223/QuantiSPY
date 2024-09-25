@@ -3,7 +3,7 @@ import pandas as pd
 from datetime import datetime
 import os
 
-API_KEY = 'o1jQl2lXxGwwzVgxxrH97fNUUbqHp3NM'
+API_KEY = 'api key here'
 
 def ensure_directory_exists(file_path):
     """Ensure the directory for the file exists, and create it if not."""
