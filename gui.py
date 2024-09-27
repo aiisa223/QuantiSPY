@@ -1,116 +1,115 @@
 import tkinter as tk
-from tkinter import filedialog, messagebox, simpledialog
-from data_fetcher import fetch_spy_data_for_today
-from vwap_calculation import calculate_vwap_with_bands_and_signals
-from plotter import plot_data_with_signals  # Import the plot function
+from tkinter import ttk, messagebox
+import matplotlib.pyplot as plt
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+from alpha_vantage.timeseries import TimeSeries
+import pandas as pd
+import yfinance as yf
+from plotter import plot_stock_data
+from PIL import Image, ImageTk
 
-class FinancialAnalysisApp:
-    def __init__(self, root):
-        self.root = root
-        self.root.title("QuantiSPY")
+class StockAnalyzerGUI:
+    def __init__(self, master):
+        self.master = master
+        self.master.title("QuantiSPY: Instant Technical Analysis")
+        self.master.geometry("800x700")  # Increased height to accommodate logo
 
-        #window dimension
-        self.root.geometry("500x500")
-        self.add_logo()
+        self.api_var = tk.StringVar(value="Alpha Vantage")
+        self.api_key = tk.StringVar()
 
-    def add_logo(self):
-        self.logo = tk.PhotoImage(file="spy_data/QuantiSPY.png")
-        self.logo_label = tk.Label(self.root, image=self.logo)
-        self.logo_label.pack(pady=10)  # Adjust padding as needed
-
-        # Initialize data file variable
-        self.data_csv = None
-
-        # Create UI components
         self.create_widgets()
 
     def create_widgets(self):
-        # Fetch Historical Data Button
-        self.fetch_data_button = tk.Button(self.root, text="Fetch Historical Data", command=self.fetch_historical_data)
-        self.fetch_data_button.pack(pady=10)
+        # Logo
+        logo_frame = ttk.Frame(self.master)
+        logo_frame.pack(pady=10)
+        self.load_logo(logo_frame)
 
-        # Load Data Button
-        self.load_button = tk.Button(self.root, text="Load Data", command=self.load_data)
-        self.load_button.pack(pady=10)
+        # API Selection
+        api_frame = ttk.Frame(self.master)
+        api_frame.pack(pady=10)
+        ttk.Label(api_frame, text="Select API:").pack(side=tk.LEFT)
+        ttk.Radiobutton(api_frame, text="Alpha Vantage", variable=self.api_var, value="Alpha Vantage").pack(
+            side=tk.LEFT)
+        ttk.Radiobutton(api_frame, text="Yahoo Finance", variable=self.api_var, value="Yahoo Finance").pack(
+            side=tk.LEFT)
 
-        # Calculate VWAP Button
-        self.calculate_vwap_button = tk.Button(self.root, text="Calculate VWAP", command=self.calculate_vwap)
-        self.calculate_vwap_button.pack(pady=10)
+        # API Key Input (for Alpha Vantage)
+        key_frame = ttk.Frame(self.master)
+        key_frame.pack(pady=10)
+        ttk.Label(key_frame, text="Alpha Vantage API Key:").pack(side=tk.LEFT)
+        ttk.Entry(key_frame, textvariable=self.api_key, width=40).pack(side=tk.LEFT)
 
-        # Plot Data Button
-        self.plot_data_with_signals_button = tk.Button(self.root, text="Plot Data", command=self.plot_data)
-        self.plot_data_with_signals_button.pack(pady=10)
+        # Stock Symbol Input
+        input_frame = ttk.Frame(self.master)
+        input_frame.pack(pady=10)
+        ttk.Label(input_frame, text="Enter Stock Symbol:").pack(side=tk.LEFT)
+        self.symbol_entry = ttk.Entry(input_frame, width=10)
+        self.symbol_entry.pack(side=tk.LEFT)
+        ttk.Button(input_frame, text="Analyze", command=self.analyze_stock).pack(side=tk.LEFT)
 
-        # Status Label - ensure this is created properly
-        self.status_label = tk.Label(self.root, text="Status: Ready")
-        self.status_label.pack(pady=10)
+        # Chart Area
+        self.chart_frame = ttk.Frame(self.master)
+        self.chart_frame.pack(fill=tk.BOTH, expand=True)
 
-    def fetch_historical_data(self):
-        """Fetch historical data and save to a CSV file."""
+    def load_logo(self, frame):
         try:
-            start_date = simpledialog.askstring("Input", "Enter start date (YYYY-MM-DD):")
-            end_date = simpledialog.askstring("Input", "Enter end date (YYYY-MM-DD):")
+            # Load and resize the image
+            image = Image.open("QuantSPY.png")
+            image = image.resize((200, 200), Image.LANCZOS)  # Adjust size as needed
+            photo = ImageTk.PhotoImage(image)
 
-            if not start_date or not end_date:
-                raise ValueError("Start date and end date must be provided.")
-
-            output_csv = filedialog.asksaveasfilename(defaultextension=".csv", filetypes=[("CSV Files", "*.csv")])
-
-            if not output_csv:
-                raise ValueError("Output file path must be provided.")
-
-            fetch_spy_data_for_today(output_csv)
-            self.status_label.config(text=f"Historical data fetched and saved to {output_csv}")
-
+            # Create a label and display the image
+            logo_label = ttk.Label(frame, image=photo)
+            logo_label.image = photo  # Keep a reference
+            logo_label.pack()
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to fetch historical data: {e}")
-            self.status_label.config(text="Failed to fetch historical data.")
+            print(f"Error loading logo: {e}")
 
-    def load_data(self):
-        """Open file dialog to load CSV data."""
-        self.data_csv = filedialog.askopenfilename(filetypes=[("CSV Files", "*.csv")])
-        if self.data_csv:
-            self.status_label.config(text=f"Loaded file: {self.data_csv}")
-        else:
-            self.status_label.config(text="No file selected.")
-
-    def calculate_vwap(self):
-        """Calculate VWAP from the loaded CSV file."""
-        if not self.data_csv:
-            messagebox.showerror("Error", "No data file loaded. Please load a CSV file first.")
+    def analyze_stock(self):
+        symbol = self.symbol_entry.get().upper()
+        if not symbol:
+            messagebox.showerror("Error", "Please enter a stock symbol")
             return
 
         try:
-            vwap_period = simpledialog.askinteger("Input", "Enter VWAP period (number of bars):")
+            if self.api_var.get() == "Alpha Vantage":
+                if not self.api_key.get():
+                    messagebox.showerror("Error", "Please enter your Alpha Vantage API key")
+                    return
+                df = self.get_stock_data_alpha_vantage(symbol)
+            else:
+                df = self.get_stock_data_yahoo(symbol)
 
-            if not vwap_period:
-                raise ValueError("VWAP period must be provided.")
-
-            calculate_vwap_with_bands_and_signals(self.data_csv, vwap_period, band_multiplier=1)
-            self.status_label.config(text=f"VWAP calculation complete. Output saved.")
-
+            self.plot_stock_chart(df, symbol)
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to calculate VWAP: {e}")
-            self.status_label.config(text="Failed to calculate VWAP.")
+            messagebox.showerror("Error", str(e))
 
-    def plot_data(self):
-        """Plot the loaded CSV data with signals."""
-        if not self.data_csv:
-            messagebox.showerror("Error", "No data file loaded. Please load a CSV file first.")
-            return
+    def get_stock_data_alpha_vantage(self, symbol):
+        ts = TimeSeries(key=self.api_key.get(), output_format='pandas')
+        data, _ = ts.get_intraday(symbol=symbol, interval='5min', outputsize='full')
+        df = data.iloc[::-1]
+        df.columns = ['open', 'high', 'low', 'close', 'volume']
+        return df
 
-        try:
-            # Call the plot function from plotter
-            plot_data_with_signals(self.data_csv)
-            self.status_label.config(text="Data plotted successfully.")
+    def get_stock_data_yahoo(self, symbol):
+        ticker = yf.Ticker(symbol)
+        df = ticker.history(period="1d", interval="5m")
+        df.columns = df.columns.str.lower()
+        return df
 
-        except Exception as e:
-            messagebox.showerror("Error", f"Failed to plot data: {e}")
-            self.status_label.config(text="Failed to plot data.")
+    def plot_stock_chart(self, df, symbol):
+        for widget in self.chart_frame.winfo_children():
+            widget.destroy()
 
+        fig, ax = plt.subplots(figsize=(10, 6))
+        plot_stock_data(fig, df, symbol)
 
-# Run the application
+        canvas = FigureCanvasTkAgg(fig, master=self.chart_frame)
+        canvas.draw()
+        canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True)
+
 if __name__ == "__main__":
     root = tk.Tk()
-    app = FinancialAnalysisApp(root)
+    app = StockAnalyzerGUI(root)
     root.mainloop()

@@ -1,44 +1,32 @@
 import pandas as pd
 
-
-def calculate_vwap_with_bands_and_signals(input_csv, vwap_period, band_multiplier):
+def calculate_vwap(data: pd.DataFrame) -> pd.Series:
     """
-    Calculate VWAP, its bands, and buy signals from CSV file.
+    Calculate the Volume Weighted Average Price (VWAP).
 
     Parameters:
-    - input_csv (str): Path to the input CSV file containing historical stock data.
-    - vwap_period (int): The VWAP period (number of bars).
-    - band_multiplier (float): Multiplier for calculating upper and lower bands.
+    data (pd.DataFrame): A DataFrame containing 'close' and 'volume' columns.
+
+    Returns:
+    pd.Series: A Series containing the VWAP values.
     """
-    # Load CSV data
-    df = pd.read_csv(input_csv, parse_dates=True, index_col="Date")
+    if 'close' not in data.columns or 'volume' not in data.columns:
+        raise ValueError("DataFrame must contain 'close' and 'volume' columns")
 
-    # Ensure necessary columns exist
-    required_columns = ['Open', 'High', 'Low', 'Close', 'Volume']
-    if not all(column in df.columns for column in required_columns):
-        raise ValueError("CSV must contain 'Open', 'High', 'Low', 'Close', 'Volume' columns.")
-
-    # Calculate VWAP
-    df['typical_price'] = (df['High'] + df['Low'] + df['Close']) / 3
-    df['vwap'] = (df['typical_price'] * df['Volume']).cumsum() / df['Volume'].cumsum()
-
-    # Calculate moving average of VWAP for bands
-    df['vwap_sma'] = df['vwap'].rolling(window=vwap_period).mean()
-    df['vwap_std'] = df['vwap'].rolling(window=vwap_period).std()
-
-    df['upper_band'] = df['vwap_sma'] + (band_multiplier * df['vwap_std'])
-    df['lower_band'] = df['vwap_sma'] - (band_multiplier * df['vwap_std'])
-
-    # Generate buy signals
-    df['buy_signal'] = ((df['Close'].shift(1) < df['vwap'].shift(1)) & (df['Close'] > df['vwap'])).astype(int)
-
-    # Output the VWAP, bands, and buy signals data
-    output_csv = input_csv.replace(".csv", "_vwap_bands_signals.csv")
-    df.to_csv(output_csv, index=True)
-
-    print(f"VWAP, bands, and buy signals calculation complete. Output saved to {output_csv}")
+    vwap = (data['close'] * data['volume']).cumsum() / data['volume'].cumsum()
+    return vwap
 
 
-# Example usage
+# Example usage:
 if __name__ == "__main__":
-    calculate_vwap_with_bands_and_signals("spy_data/spy_data_5m.csv", vwap_period=20, band_multiplier=1)
+    # Sample data for testing
+    data = {
+        'Close': [100, 102, 101, 105, 103],
+        'Volume': [200, 220, 250, 300, 280]
+    }
+    df = pd.DataFrame(data)
+
+    # Calculate and print VWAP
+    vwap_values = calculate_vwap(df)
+    print("VWAP Values:")
+    print(vwap_values)
