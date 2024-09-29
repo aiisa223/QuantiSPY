@@ -1,0 +1,11 @@
+numpy~=2.1.1
+ttkbootstrap~=1.10.1
+matplotlib~=3.9.2
+pandas~=2.2.2
+yfinance~=0.2.43
+pillow~=10.4.0
+mplcursors~=0.5.3
+scikit-learn~=1.5.2
+scipy~=1.14.1
+pybind11~=2.13.6
+setuptools~=65.5.1

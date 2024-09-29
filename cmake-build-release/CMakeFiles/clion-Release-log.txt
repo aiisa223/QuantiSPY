@@ -1,0 +1,16 @@
+"C:\Program Files\JetBrains\CLion 2023.1.3\bin\cmake\win\x64\bin\cmake.exe" -DCMAKE_BUILD_TYPE=Release "-DCMAKE_MAKE_PROGRAM=C:/Program Files/JetBrains/CLion 2023.1.3/bin/ninja/win/x64/ninja.exe" -G Ninja -S C:\Users\aiisa\PycharmProjects\QuantSPY -B C:\Users\aiisa\PycharmProjects\QuantSPY\cmake-build-release
+CMake Error at CMakeLists.txt:7 (find_package):
+  Could not find a package configuration file provided by "pybind11" with any
+  of the following names:
+
+    pybind11Config.cmake
+    pybind11-config.cmake
+
+  Add the installation prefix of "pybind11" to CMAKE_PREFIX_PATH or set
+  "pybind11_DIR" to a directory containing one of the above files.  If
+  "pybind11" provides a separate development package or SDK, be sure it has
+  been installed.
+
+
+-- Configuring incomplete, errors occurred!
+See also "C:/Users/aiisa/PycharmProjects/QuantSPY/cmake-build-release/CMakeFiles/CMakeOutput.log".
