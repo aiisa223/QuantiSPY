@@ -25,7 +25,7 @@ QuantiSPY is a powerful and user-friendly stock analysis tool that combines real
 
 ## Future Enhancements
 
-- Integration with machine learning models for predictive analysis
+- Trade Risk Analysis
 - Additional technical indicators and chart patterns
 - Portfolio management and tracking features Created by Ali Imran
 
